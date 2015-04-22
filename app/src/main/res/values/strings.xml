@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Converter</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string-array name="MONEY_array">
+        <item>RUB</item>
+        <item>EURO</item>
+        <item>USD</item>
+    </string-array>
+</resources>
