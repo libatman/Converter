@@ -188,9 +188,6 @@ public class MainActivity extends ActionBarActivity {
             days = savedInstanceState.getInt("days");
             SP_1.setSelection(savedInstanceState.getInt("pos1"));
             SP_2.setSelection(savedInstanceState.getInt("pos2"));
-            Toast toast = Toast.makeText(getApplicationContext(),
-                    "Пора покормить кота!", Toast.LENGTH_SHORT);
-            toast.show();
         }
         updateDisplay();
         mt = new MyTask();
