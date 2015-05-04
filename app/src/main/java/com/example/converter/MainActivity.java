@@ -23,7 +23,6 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -35,7 +34,11 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Enumeration;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -45,8 +48,6 @@ public class MainActivity extends ActionBarActivity {
     private int months;
     private int days;
     TextView TV_data;
-    TextView TV_eur;
-    TextView TV_usd;
     private Handler handler;
     private Handler handler2;
     MyTask mt;
@@ -56,13 +57,14 @@ public class MainActivity extends ActionBarActivity {
     EditText ET_num2;
     EditText ET_num1;
     Spinner SP_2;
+    boolean flag = true;
 
 
 
     private DatePickerDialog.OnDateSetListener listener =
             new DatePickerDialog.OnDateSetListener(){
                 public void onDateSet (DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-                    if (year == years && months == monthOfYear && days > dayOfMonth) {
+                        if (year == years && months == monthOfYear && days > dayOfMonth) {
 
                     }
                     else {
@@ -72,7 +74,7 @@ public class MainActivity extends ActionBarActivity {
                         updateDisplay();
                         mt = new MyTask();
                         mt.execute();
-                        convert();
+
                     }
                 }
             };
@@ -88,7 +90,7 @@ public class MainActivity extends ActionBarActivity {
         @Override
         protected Void doInBackground(Void... params) {
             try {
-                parsing();
+                Valuta.getInstance().update(TV_data.getText().toString());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -99,7 +101,15 @@ public class MainActivity extends ActionBarActivity {
         protected void onPostExecute(Void result) {
             super.onPostExecute(result);
             pb.setVisibility(View.INVISIBLE);
-        }
+            if(flag) {
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_item, Valuta.getInstance().getKeys());
+                ArrayAdapter<String> ad2 = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_item, Valuta.getInstance().getKeys());
+                SP_1.setAdapter(adapter);
+                SP_2.setAdapter(ad2);
+                flag = false;
+            }
+                ET_num2.setText(Valuta.getInstance().convert(SP_1.getSelectedItem().toString(), SP_2.getSelectedItem().toString(), Double.valueOf(ET_num1.getText().toString())));
+            }
     }
 
     protected void onSaveInstanceState(Bundle outState) {
@@ -121,8 +131,6 @@ public class MainActivity extends ActionBarActivity {
             SP_1 = (Spinner) findViewById(R.id.spinner);
             SP_2 = (Spinner) findViewById(R.id.spinner2);
             TV_data = (TextView) findViewById(R.id.textView6);
-            TV_eur = (TextView) findViewById(R.id.textView5);
-            TV_usd = (TextView) findViewById(R.id.textView3);
             ET_num1 = (EditText) findViewById(R.id.editText);
             ET_num2 = (EditText) findViewById(R.id.editText2);
             pb = (ProgressBar) findViewById(R.id.progressBar);
@@ -132,33 +140,11 @@ public class MainActivity extends ActionBarActivity {
             SP_1 = (Spinner) findViewById(R.id.spinner3);
             SP_2 = (Spinner) findViewById(R.id.spinner4);
             TV_data = (TextView) findViewById(R.id.textView7);
-            TV_eur = (TextView) findViewById(R.id.textView12);
-            TV_usd = (TextView) findViewById(R.id.textView10);
             ET_num1 = (EditText) findViewById(R.id.editText3);
             ET_num2 = (EditText) findViewById(R.id.editText4);
             pb = (ProgressBar) findViewById(R.id.progressBar2);
         }
-
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.MONEY_array, android.R.layout.simple_spinner_item);
-        ArrayAdapter<CharSequence> ad2 = ArrayAdapter.createFromResource(this, R.array.MONEY_array, android.R.layout.simple_spinner_item);
-        SP_1.setAdapter(adapter);
-        SP_2.setAdapter(ad2);
-        handler = new Handler() {
-            @Override
-            public void handleMessage(Message msg) {
-                String text = (String) msg.obj;
-                TV_usd.setText(text);
-            }
-        };
-        handler2 = new Handler() {
-            @Override
-            public void handleMessage (Message msg) {
-                String text = (String) msg.obj;
-                TV_eur.setText(text);
-            }
-        };
-
+        ET_num1.setText("0");
         pb.setVisibility(View.INVISIBLE);
         ET_num1.addTextChangedListener(new TextWatcher() {
             @Override
@@ -168,8 +154,10 @@ public class MainActivity extends ActionBarActivity {
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i2, int i3) {
-                convert();
-            }
+                try {
+                    ET_num2.setText(Valuta.getInstance().convert(SP_1.getSelectedItem().toString(), SP_2.getSelectedItem().toString(), Double.valueOf(ET_num1.getText().toString())));
+                }
+            catch (Exception ex){}}
 
             @Override
             public void afterTextChanged(Editable editable) {
@@ -192,7 +180,6 @@ public class MainActivity extends ActionBarActivity {
         updateDisplay();
         mt = new MyTask();
         mt.execute();
-        Valuta.getInstance().setvaluta(TV_usd.getText().toString(), TV_eur.getText().toString());
         TV_data.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -207,8 +194,7 @@ public class MainActivity extends ActionBarActivity {
         SP_1.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                convert();
-            }
+                ET_num2.setText(Valuta.getInstance().convert(SP_1.getSelectedItem().toString(), SP_2.getSelectedItem().toString(), Double.valueOf(ET_num1.getText().toString())));            }
 
             @Override
             public void onNothingSelected(AdapterView<?> adapterView) {
@@ -219,7 +205,7 @@ public class MainActivity extends ActionBarActivity {
         SP_2.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
-                convert();
+                ET_num2.setText(Valuta.getInstance().convert(SP_1.getSelectedItem().toString(), SP_2.getSelectedItem().toString(), Double.valueOf(ET_num1.getText().toString())));
             }
 
             @Override
@@ -227,8 +213,12 @@ public class MainActivity extends ActionBarActivity {
 
             }
         });
-
-
+        try {
+           ET_num2.setText(Valuta.getInstance().convert(SP_1.getSelectedItem().toString(), SP_2.getSelectedItem().toString(), Double.valueOf(ET_num1.getText().toString())));
+        }
+        catch (Exception ex)
+        {
+        }
 
 
     }
@@ -245,117 +235,6 @@ public class MainActivity extends ActionBarActivity {
             months2 = "0" + Integer.toString(months+1);
         }
         TV_data.setText(days2 + "/" + months2 + "/" + Integer.toString(years));
-    }
-
-
-
-
-
-    @TargetApi(Build.VERSION_CODES.FROYO)
-    void parsing(){
-        try {
-            CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
-            URL url = new URL("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + TV_data.getText().toString());
-            URLConnection conn = url.openConnection();
-
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document doc = builder.parse(conn.getInputStream());
-            doc.getDocumentElement().normalize();
-
-            NodeList nodes = doc.getElementsByTagName("Valute");
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Node element = nodes.item(i);
-                NamedNodeMap namedNodeMap = element.getAttributes();
-                if (namedNodeMap.getNamedItem("ID").getNodeValue().equals("R01235")) {
-                    NodeList childs = element.getChildNodes();
-                    Node node_child = childs.item(9);
-                    Message msg = new Message();
-                    msg.obj = node_child.getTextContent();
-                    handler.sendMessage(msg);
-                }
-                if (namedNodeMap.getNamedItem("ID").getNodeValue().equals("R01239")) {
-                    NodeList childs = element.getChildNodes();
-                    Node node_child = childs.item(9);
-                    Message msg = new Message();
-                    msg.obj = node_child.getTextContent();
-                    handler2.sendMessage(msg);
-                }
-            }
-
-
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    void convert() {
-        try {
-            int id = SP_1.getSelectedItemPosition();
-            int id2 = SP_2.getSelectedItemPosition();
-            double kursevro = parsedouble(TV_eur.getText().toString());
-            double kursusd = parsedouble(TV_usd.getText().toString());
-            firstnumber = Double.valueOf(ET_num1.getText().toString());
-            switch (id) {
-                case 0:
-                    switch (id2) {
-                        case 0:
-                            ET_num2.setText(ET_num1.getText().toString());
-                            break;
-                        case 1:
-                            ET_num2.setText(Double.toString(new BigDecimal(firstnumber / kursevro).setScale(3, RoundingMode.HALF_UP).doubleValue()));
-                            break;
-                        case 2:
-                            ET_num2.setText(Double.toString(new BigDecimal(firstnumber / kursusd).setScale(3, RoundingMode.HALF_UP).doubleValue()));
-                            break;
-                    }
-                    break;
-                case 1:
-                    switch (id2) {
-                        case 0:
-                            ET_num2.setText(Double.toString(new BigDecimal(firstnumber * kursevro).setScale(3, RoundingMode.HALF_UP).doubleValue()));
-                            break;
-                        case 1:
-                            ET_num2.setText(ET_num1.getText().toString());
-                            break;
-                        case 2:
-                            ET_num2.setText(Double.toString(new BigDecimal(kursevro / kursusd * firstnumber).setScale(3, RoundingMode.HALF_UP).doubleValue()));
-                            break;
-                    }
-                    break;
-                case 2:
-                    switch (id2) {
-                        case 0:
-                            ET_num2.setText(Double.toString(new BigDecimal(firstnumber * kursusd).setScale(3, RoundingMode.HALF_UP).doubleValue()));
-                            break;
-                        case 1:
-                            ET_num2.setText(Double.toString(new BigDecimal(kursusd / kursevro * firstnumber).setScale(3, RoundingMode.HALF_UP).doubleValue()));
-                            break;
-                        case 2:
-                            ET_num2.setText(ET_num1.getText().toString());
-                    }
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            ET_num2.setText("");
-        }
-    }
-
-    double parsedouble(String s){
-        double kurs = 0;
-        s = s.replace(",", ".");
-        try
-        {
-            kurs = Double.parseDouble(s);
-        }catch(NumberFormatException e)
-        {
-            e.printStackTrace();
-        }
-        return kurs;
     }
 
     @Override
